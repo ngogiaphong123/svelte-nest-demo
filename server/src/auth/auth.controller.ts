@@ -1,16 +1,20 @@
 import {
     Body,
     Controller,
+    Get,
     HttpCode,
     HttpStatus,
     Post,
+    UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto, RefreshDto, RegisterDto } from './dto';
 import { Tokens } from './types';
-import { ResponseMessage } from '../decorators/response_message.decorator';
+import { ResponseMessage } from '../decorators/responseMessage.decorator';
 import { ResTransformInterceptor } from '../interceptors/response.interceptor';
+import { AuthGuard } from './guards/auth.guard';
+import { GetCurrentUser } from '../decorators/getCurrentUser.decorator';
 
 @Controller('auth')
 @UseInterceptors(ResTransformInterceptor)
@@ -34,8 +38,17 @@ export class AuthController {
     @Post('/local/logout')
     @HttpCode(HttpStatus.OK)
     @ResponseMessage('User logged out successfully')
-    async logout(): Promise<Tokens> {
-        return this.authService.logout();
+    @UseGuards(AuthGuard)
+    async logout(@GetCurrentUser('userId') userId: string): Promise<Tokens> {
+        return this.authService.logout(userId);
+    }
+
+    @Get('/local/me')
+    @HttpCode(HttpStatus.OK)
+    @ResponseMessage('User retrieved successfully')
+    @UseGuards(AuthGuard)
+    async getMe(@GetCurrentUser() user: any) {
+        return user;
     }
 
     @Post('/local/refresh')
