@@ -3,10 +3,6 @@
 	let password: string;
 
 	const handleLogin = async (e: Event) => {
-		e.preventDefault();
-		const formData = new FormData();
-		formData.append('email', email);
-		formData.append('password', password);
 		// Call the API
 	};
 </script>
