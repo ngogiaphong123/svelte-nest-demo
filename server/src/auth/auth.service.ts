@@ -5,11 +5,22 @@ import * as argon2 from 'argon2';
 import { Payload } from './types/payload.type';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 @Injectable()
 export class AuthService {
-    constructor(private prisma: PrismaService, private jwt: JwtService) {}
+    constructor(
+        private prisma: PrismaService,
+        private jwt: JwtService,
+        private cloudinary: CloudinaryService,
+    ) {}
 
-    async register(dto: RegisterDto) {
+    async register(dto: RegisterDto, avatar: Express.Multer.File) {
+        if (!avatar) {
+            throw new HttpException(
+                'Avatar is required',
+                HttpStatus.BAD_REQUEST,
+            );
+        }
         const { email, password, confirmPassword } = dto;
         if (password !== confirmPassword) {
             throw new HttpException(
@@ -18,16 +29,30 @@ export class AuthService {
             );
         }
         const hashedPassword = await this.hashData(password);
+        const userExists = await this.prisma.user.findUnique({
+            where: {
+                email: email,
+            },
+        });
+        if (userExists) {
+            throw new HttpException(
+                'User with this email already exists',
+                HttpStatus.BAD_REQUEST,
+            );
+        }
+        const { url } = await this.cloudinary.uploadFile(avatar);
         const user = await this.prisma.user.create({
             data: {
                 email: email,
                 password: hashedPassword,
+                avatarUrl: url,
             },
             select: {
                 email: true,
                 userId: true,
                 createdAt: true,
                 updatedAt: true,
+                avatarUrl: true,
             },
         });
         return user;

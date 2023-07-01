@@ -5,6 +5,7 @@ import {
     HttpCode,
     HttpStatus,
     Post,
+    UploadedFile,
     UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import { ResponseMessage } from '../decorators/responseMessage.decorator';
 import { ResTransformInterceptor } from '../interceptors/response.interceptor';
 import { AuthGuard } from './guards/auth.guard';
 import { GetCurrentUser } from '../decorators/getCurrentUser.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('auth')
 @UseInterceptors(ResTransformInterceptor)
@@ -23,9 +25,13 @@ export class AuthController {
 
     @Post('/local/register')
     @ResponseMessage('User registered successfully')
+    @UseInterceptors(FileInterceptor('avatar'))
     @HttpCode(HttpStatus.CREATED)
-    async register(@Body() dto: RegisterDto) {
-        return this.authService.register(dto);
+    async register(
+        @UploadedFile() avatar: Express.Multer.File,
+        @Body() dto: RegisterDto,
+    ) {
+        return this.authService.register(dto, avatar);
     }
 
     @Post('/local/login')
