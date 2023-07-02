@@ -9,7 +9,7 @@
 	const handleLogin = async () => {
 		const res = await login(email, password);
 		if (res.status === 'Success') {
-			goto('/profile');
+			goto('/profile', { replaceState: true });
 		} else {
 			errorMessage = res.message;
 		}

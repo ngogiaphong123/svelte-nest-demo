@@ -3,13 +3,11 @@ import axios from 'axios';
 export interface Response {
 	status: string;
 	message: string;
+	data?: any;
 }
 
 const apiNoAuth = axios.create({
 	baseURL: import.meta.env.VITE_API_URL,
-	headers: {
-		'Content-Type': 'application/json'
-	}
 });
 
 const apiWithAuth = axios.create({
@@ -49,7 +47,7 @@ apiWithAuth.interceptors.response.use(
 			const { data } = await apiNoAuth.post('/auth/local/refresh', {
 				refresh_token: refreshToken
 			});
-			if (data.statusCode === 200) {
+			if (data.statusCode === 201) {
 				localStorage.setItem('accessToken', data.data.access_token);
 				localStorage.setItem('refreshToken', data.data.refresh_token);
 				return apiWithAuth(originalRequest);

@@ -17,6 +17,7 @@ import { ResTransformInterceptor } from '../interceptors/response.interceptor';
 import { AuthGuard } from './guards/auth.guard';
 import { GetCurrentUser } from '../decorators/getCurrentUser.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { File } from 'buffer';
 
 @Controller('auth')
 @UseInterceptors(ResTransformInterceptor)

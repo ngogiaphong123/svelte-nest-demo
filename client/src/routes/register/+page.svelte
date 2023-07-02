@@ -1,9 +1,13 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { register } from '../../stores/userStores';
+
 	let email: string;
 	let fullName: string;
 	let password: string;
 	let passwordConfirm: string;
 	let avatar: File;
+	let errorMessage: string;
 
 	const handleImageUpload = (e: Event) => {
 		const target = e.target as HTMLInputElement;
@@ -16,9 +20,14 @@
 		formData.append('email', email);
 		formData.append('fullName', fullName);
 		formData.append('password', password);
-		formData.append('passwordConfirm', passwordConfirm);
+		formData.append('confirmPassword', passwordConfirm);
 		formData.append('avatar', avatar);
-		
+		const res = await register(formData);
+		if (res.status === 'Success') {
+			goto('/login', { replaceState: true });
+		} else {
+			errorMessage = res.message;
+		}
 	};
 </script>
 
@@ -70,13 +79,7 @@
 		</div>
 		<div class="mb-3">
 			<label for="avatar" class="form-label">Upload your avatar</label>
-			<input
-				class="form-control"
-				type="file"
-				id="avatar"
-				on:change={handleImageUpload}
-				accept="image/png, image/jpeg"
-			/>
+			<input class="form-control" type="file" required id="avatar" on:change={handleImageUpload} />
 			{#if avatar}
 				<img
 					style="max-width : 20rem;"
@@ -87,5 +90,10 @@
 			{/if}
 		</div>
 		<button type="submit" class="btn btn-primary" disabled={!avatar ?? null}>Register</button>
+		{#if errorMessage}
+			<div class="alert alert-danger mt-2" role="alert">
+				{errorMessage}
+			</div>
+		{/if}
 	</form>
 </div>
