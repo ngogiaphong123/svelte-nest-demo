@@ -53,8 +53,8 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @ResponseMessage('User retrieved successfully')
     @UseGuards(AuthGuard)
-    async getMe(@GetCurrentUser() user: any) {
-        return user;
+    async getMe(@GetCurrentUser('userId') userId: string) {
+        return this.authService.getMe(userId);
     }
 
     @Post('/local/refresh')

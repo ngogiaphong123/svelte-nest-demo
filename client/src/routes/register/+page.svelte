@@ -18,8 +18,7 @@
 		formData.append('password', password);
 		formData.append('passwordConfirm', passwordConfirm);
 		formData.append('avatar', avatar);
-		console.log(email, fullName, password, passwordConfirm, avatar)
-		// Call the API
+		
 	};
 </script>
 
