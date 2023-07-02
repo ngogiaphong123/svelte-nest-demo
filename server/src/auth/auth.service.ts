@@ -21,7 +21,7 @@ export class AuthService {
                 HttpStatus.BAD_REQUEST,
             );
         }
-        const { email, password, confirmPassword } = dto;
+        const { email, password, confirmPassword, fullName } = dto;
         if (password !== confirmPassword) {
             throw new HttpException(
                 'Passwords do not match',
@@ -46,13 +46,13 @@ export class AuthService {
                 email: email,
                 password: hashedPassword,
                 avatarUrl: url,
+                fullName: fullName,
             },
             select: {
                 email: true,
                 userId: true,
-                createdAt: true,
-                updatedAt: true,
                 avatarUrl: true,
+                fullName: true,
             },
         });
         return user;
@@ -93,6 +93,21 @@ export class AuthService {
             access_token: '',
             refresh_token: '',
         };
+    }
+
+    async getMe(userId: string) {
+        const user = await this.prisma.user.findUnique({
+            where: {
+                userId: userId,
+            },
+            select: {
+                email: true,
+                userId: true,
+                avatarUrl: true,
+                fullName: true,
+            },
+        });
+        return user;
     }
 
     async refreshTokens(dto: RefreshDto) {

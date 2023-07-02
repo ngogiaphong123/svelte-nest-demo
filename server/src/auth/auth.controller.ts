@@ -17,6 +17,7 @@ import { ResTransformInterceptor } from '../interceptors/response.interceptor';
 import { AuthGuard } from './guards/auth.guard';
 import { GetCurrentUser } from '../decorators/getCurrentUser.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { File } from 'buffer';
 
 @Controller('auth')
 @UseInterceptors(ResTransformInterceptor)
@@ -53,8 +54,8 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @ResponseMessage('User retrieved successfully')
     @UseGuards(AuthGuard)
-    async getMe(@GetCurrentUser() user: any) {
-        return user;
+    async getMe(@GetCurrentUser('userId') userId: string) {
+        return this.authService.getMe(userId);
     }
 
     @Post('/local/refresh')
