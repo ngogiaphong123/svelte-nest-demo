@@ -1,0 +1,15 @@
+version: '3'
+services:
+  client:
+    build:
+      context: ./client  # Directory containing the client Dockerfile
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000  # Replace with the appropriate port for your client application
+
+  server:
+    build:
+      context: ./server  # Directory containing the server Dockerfile
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080  # Replace with the appropriate port for your server application
