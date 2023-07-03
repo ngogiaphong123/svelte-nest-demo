@@ -15,10 +15,31 @@ model User {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    email    String @unique
-    fullName String
-    password String
-    avatarUrl String
-
+    email        String  @unique
+    fullName     String
+    password     String
+    avatarUrl    String
     refreshToken String?
+
+    roles hasRole[]
+}
+
+model Role {
+    roleId    String   @id @default(auto()) @map("_id") @db.ObjectId
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    title String    @unique
+    users hasRole[]
+}
+
+model hasRole {
+    hasRoleId String   @id @default(auto()) @map("_id") @db.ObjectId
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    userId String @db.ObjectId
+    roleId String @db.ObjectId
+    user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+    role   Role   @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
 }
