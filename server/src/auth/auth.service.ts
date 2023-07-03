@@ -6,6 +6,8 @@ import { Payload } from './types/payload.type';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { Role } from './types/roles.enum';
+import { AddRoleDto } from './dto/addRole.dto';
 @Injectable()
 export class AuthService {
     constructor(
@@ -55,7 +57,18 @@ export class AuthService {
                 fullName: true,
             },
         });
-        return user;
+        const userRole = await this.prisma.role.findUnique({
+            where: {
+                title: 'user',
+            },
+        });
+        await this.prisma.hasRole.create({
+            data: {
+                roleId: userRole.roleId,
+                userId: user.userId,
+            },
+        });
+        return { ...user, role: [userRole.title] };
     }
 
     async login(dto: LoginDto) {
@@ -63,6 +76,20 @@ export class AuthService {
         const user = await this.prisma.user.findUnique({
             where: {
                 email: email,
+            },
+            select: {
+                email: true,
+                userId: true,
+                password: true,
+                roles: {
+                    select: {
+                        role: {
+                            select: {
+                                title: true,
+                            },
+                        },
+                    },
+                },
             },
         });
         if (!user) {
@@ -81,6 +108,7 @@ export class AuthService {
         const payload: Payload = {
             email: user.email,
             userId: user.userId,
+            roles: user.roles.map((role) => role.role.title) as Role[],
         };
         const tokens = await this.generateTokens(payload);
         await this.updateRefreshToken(user.userId, tokens.refresh_token);
@@ -105,9 +133,19 @@ export class AuthService {
                 userId: true,
                 avatarUrl: true,
                 fullName: true,
+                roles: {
+                    select: {
+                        role: {
+                            select: {
+                                title: true,
+                            },
+                        },
+                    },
+                },
             },
         });
-        return user;
+        const { roles, ...rest } = user;
+        return { ...rest, roles: roles.map((role) => role.role.title) };
     }
 
     async refreshTokens(dto: RefreshDto) {
@@ -119,6 +157,19 @@ export class AuthService {
                     userId: decoded.userId,
                     refreshToken: refresh_token,
                 },
+                select: {
+                    email: true,
+                    userId: true,
+                    roles: {
+                        select: {
+                            role: {
+                                select: {
+                                    title: true,
+                                },
+                            },
+                        },
+                    },
+                },
             });
             if (!user) {
                 throw new HttpException(
@@ -129,6 +180,7 @@ export class AuthService {
             const payload: Payload = {
                 email: user.email,
                 userId: user.userId,
+                roles: user.roles.map((role) => role.role.title) as Role[],
             };
             const tokens = await this.generateTokens(payload);
             await this.updateRefreshToken(user.userId, tokens.refresh_token);
@@ -136,6 +188,60 @@ export class AuthService {
         } catch (err) {
             throw new HttpException('Invalid token', HttpStatus.BAD_REQUEST);
         }
+    }
+
+    async addRole(dto: AddRoleDto) {
+        const { userId, roleId } = dto;
+        const user = await this.prisma.user.findUnique({
+            where: {
+                userId: userId,
+            },
+            select: {
+                email: true,
+                userId: true,
+                roles: {
+                    select: {
+                        role: {
+                            select: {
+                                title: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        if (!user) {
+            throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+        }
+        const role = await this.prisma.role.findUnique({
+            where: {
+                roleId: roleId,
+            },
+        });
+        if (!role) {
+            throw new HttpException('Role not found', HttpStatus.NOT_FOUND);
+        }
+        const hasRole = await this.prisma.hasRole.findFirst({
+            where: {
+                userId: userId,
+                roleId: roleId,
+            },
+        });
+        if (hasRole) {
+            throw new HttpException(
+                'User already has this role',
+                HttpStatus.BAD_REQUEST,
+            );
+        }
+        await this.prisma.hasRole.create({
+            data: {
+                roleId: roleId,
+                userId: userId,
+            },
+        });
+        return {
+            message: `Role ${role.title} added to user ${user.email} successfully`,
+        };
     }
 
     async hashData(data: string) {

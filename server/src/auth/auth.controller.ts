@@ -17,7 +17,10 @@ import { ResTransformInterceptor } from '../interceptors/response.interceptor';
 import { AuthGuard } from './guards/auth.guard';
 import { GetCurrentUser } from '../decorators/getCurrentUser.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { File } from 'buffer';
+import { RolesGuard } from './guards/roles.guard';
+import { Roles } from './decorator/roles.decorator';
+import { Role } from './types/roles.enum';
+import { AddRoleDto } from './dto/addRole.dto';
 
 @Controller('auth')
 @UseInterceptors(ResTransformInterceptor)
@@ -63,5 +66,14 @@ export class AuthController {
     @ResponseMessage('Tokens refreshed successfully')
     async refreshTokens(@Body() dto: RefreshDto) {
         return this.authService.refreshTokens(dto);
+    }
+
+    @Post('/local/add-role')
+    @HttpCode(HttpStatus.CREATED)
+    @Roles(Role.Admin)
+    @UseGuards(AuthGuard, RolesGuard)
+    @ResponseMessage('Role added successfully')
+    async addRole(@Body() dto: AddRoleDto) {
+        return this.authService.addRole(dto);
     }
 }
