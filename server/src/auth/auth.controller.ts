@@ -14,13 +14,16 @@ import { LoginDto, RefreshDto, RegisterDto } from './dto';
 import { Tokens } from './types';
 import { ResponseMessage } from '../decorators/responseMessage.decorator';
 import { ResTransformInterceptor } from '../interceptors/response.interceptor';
-import { AuthGuard } from './guards/auth.guard';
+import { LocalAuthGuard } from './guards/auth.guard';
 import { GetCurrentUser } from '../decorators/getCurrentUser.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorator/roles.decorator';
 import { Role } from './types/roles.enum';
 import { AddRoleDto } from './dto/addRole.dto';
+import { GoogleAuthGuard } from './guards/google.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { GoogleUser } from './types/googleUser';
 
 @Controller('auth')
 @UseInterceptors(ResTransformInterceptor)
@@ -48,7 +51,7 @@ export class AuthController {
     @Post('/local/logout')
     @HttpCode(HttpStatus.OK)
     @ResponseMessage('User logged out successfully')
-    @UseGuards(AuthGuard)
+    @UseGuards(LocalAuthGuard)
     async logout(@GetCurrentUser('userId') userId: string): Promise<Tokens> {
         return this.authService.logout(userId);
     }
@@ -56,7 +59,7 @@ export class AuthController {
     @Get('/local/me')
     @HttpCode(HttpStatus.OK)
     @ResponseMessage('User retrieved successfully')
-    @UseGuards(AuthGuard)
+    @UseGuards(LocalAuthGuard)
     async getMe(@GetCurrentUser('userId') userId: string) {
         return this.authService.getMe(userId);
     }
@@ -71,9 +74,25 @@ export class AuthController {
     @Post('/local/add-role')
     @HttpCode(HttpStatus.CREATED)
     @Roles(Role.Admin)
-    @UseGuards(AuthGuard, RolesGuard)
+    @UseGuards(LocalAuthGuard, RolesGuard)
     @ResponseMessage('Role added successfully')
     async addRole(@Body() dto: AddRoleDto) {
         return this.authService.addRole(dto);
+    }
+
+    @Get('/google/login')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(GoogleAuthGuard)
+    @ResponseMessage('Google login successful')
+    async googleLogin() {
+        return;
+    }
+
+    @Get('/google/redirect')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(GoogleAuthGuard)
+    @ResponseMessage('Google login successful')
+    async googleLoginRedirect(@GetCurrentUser() user: GoogleUser) {
+        return await this.authService.googleLogin(user);
     }
 }

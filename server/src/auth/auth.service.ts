@@ -8,6 +8,7 @@ import { LoginDto } from './dto/login.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { Role } from './types/roles.enum';
 import { AddRoleDto } from './dto/addRole.dto';
+import { GoogleUser } from './types/googleUser';
 @Injectable()
 export class AuthService {
     constructor(
@@ -62,10 +63,21 @@ export class AuthService {
                 title: 'user',
             },
         });
+        const provider = await this.prisma.authProvider.findUnique({
+            where: {
+                providerName: 'local',
+            },
+        });
         await this.prisma.hasRole.create({
             data: {
                 roleId: userRole.roleId,
                 userId: user.userId,
+            },
+        });
+        await this.prisma.hasAuthProvider.create({
+            data: {
+                userId: user.userId,
+                authProviderId: provider.id,
             },
         });
         return { ...user, role: [userRole.title] };
@@ -112,6 +124,88 @@ export class AuthService {
         };
         const tokens = await this.generateTokens(payload);
         await this.updateRefreshToken(user.userId, tokens.refresh_token);
+        return tokens;
+    }
+
+    async googleLogin(user: GoogleUser) {
+        const { email, username, avatarUrl } = user;
+        const userExists = await this.prisma.user.findUnique({
+            where: {
+                email: email,
+            },
+            select: {
+                email: true,
+                userId: true,
+                roles: {
+                    select: {
+                        role: {
+                            select: {
+                                title: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        if (!userExists) {
+            const newUser = await this.prisma.user.create({
+                data: {
+                    email: email,
+                    fullName: username,
+                    avatarUrl: avatarUrl,
+                },
+                select: {
+                    email: true,
+                    userId: true,
+                    roles: {
+                        select: {
+                            role: {
+                                select: {
+                                    title: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+            const userRole = await this.prisma.role.findUnique({
+                where: {
+                    title: 'user',
+                },
+            });
+            const provider = await this.prisma.authProvider.findUnique({
+                where: {
+                    providerName: 'google',
+                },
+            });
+            await this.prisma.hasRole.create({
+                data: {
+                    roleId: userRole.roleId,
+                    userId: newUser.userId,
+                },
+            });
+            await this.prisma.hasAuthProvider.create({
+                data: {
+                    userId: newUser.userId,
+                    authProviderId: provider.id,
+                },
+            });
+            const payload: Payload = {
+                email: newUser.email,
+                userId: newUser.userId,
+                roles: newUser.roles.map((role) => role.role.title) as Role[],
+            };
+            const tokens = await this.generateTokens(payload);
+            await this.updateRefreshToken(newUser.userId, tokens.refresh_token);
+            return tokens;
+        }
+        const payload: Payload = {
+            email: userExists.email,
+            userId: userExists.userId,
+            roles: userExists.roles.map((role) => role.role.title) as Role[],
+        };
+        const tokens = await this.generateTokens(payload);
+        await this.updateRefreshToken(userExists.userId, tokens.refresh_token);
         return tokens;
     }
 

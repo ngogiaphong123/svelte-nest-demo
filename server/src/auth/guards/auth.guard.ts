@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class LocalAuthGuard implements CanActivate {
     constructor(private jwt: JwtService) {}
     async canActivate(context: ExecutionContext) {
         const request = context.switchToHttp().getRequest();

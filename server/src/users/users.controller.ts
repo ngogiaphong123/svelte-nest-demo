@@ -8,7 +8,7 @@ import {
 import { UsersService } from './users.service';
 import { Roles } from '../auth/decorator/roles.decorator';
 import { Role } from '../auth/types/roles.enum';
-import { AuthGuard } from '../auth/guards/auth.guard';
+import { LocalAuthGuard } from '../auth/guards/auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ResponseMessage } from '../decorators/responseMessage.decorator';
 
@@ -18,7 +18,7 @@ export class UsersController {
 
     @Get()
     @Roles(Role.Admin)
-    @UseGuards(AuthGuard, RolesGuard)
+    @UseGuards(LocalAuthGuard, RolesGuard)
     @HttpCode(HttpStatus.OK)
     @ResponseMessage('Users retrieved successfully')
     async getUsers() {

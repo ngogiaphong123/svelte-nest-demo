@@ -6,7 +6,13 @@ import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 
 @Module({
-    imports: [PrismaModule, AuthModule, CloudinaryModule, UsersModule, ConfigModule.forRoot()],
+    imports: [
+        PrismaModule,
+        AuthModule,
+        CloudinaryModule,
+        UsersModule,
+        ConfigModule.forRoot(),
+    ],
     controllers: [],
     providers: [],
 })
